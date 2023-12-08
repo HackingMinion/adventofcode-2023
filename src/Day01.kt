@@ -1,3 +1,7 @@
+package day01
+
+import println
+import readInput
 import java.util.*
 enum class Number(val value: Int) {
     ZERO(0),
@@ -11,7 +15,6 @@ enum class Number(val value: Int) {
     EIGHT(8),
     NINE(9)
 }
-
 data class Digits (val number: Int, val index: Int)
 
 fun main() {
