@@ -1,38 +1,43 @@
 fun main() {
     data class Step(val index: Long, val name: String)
-    data class Mapping(val destination: Long, val source: Long, val range: Long)
+    data class Mapping(val destination: Long, val source: Long, val length: Long) {
+        val sourceRange
+            get(): LongRange {
+                return source until source + length
+            }
 
-    fun getSeeds(line: String): List<Long> {
-        val parts = line.split(":")
-        return parts[1].trim().split(" ").map { it.trim().toLong() }
+        fun destinationForSource(inputNumber: Long): Long {
+            return destination + (inputNumber - source)
+        }
+    }
+
+    fun getSeeds(input: List<String>): List<Long> {
+        return input
+                .first()
+                .removePrefix("seeds: ")
+                .split(" ")
+                .map(String::toLong)
     }
 
     fun parseMap(input: List<String>, mapName: String): List<Mapping> {
         val mapLines = input.dropWhile { it != mapName }.drop(1).takeWhile { it.isNotBlank() }
-        return mapLines.map { line -> line.split(' ') }.map { parts ->
-            val destination = parts[0].toLong()
-            val source = parts[1].toLong()
-            val range = parts[2].toLong()
-            Mapping(destination, source, range)
+        return mapLines.map { line -> line.split(' ').map(String::toLong) }.map {
+            Mapping(it[0], it[1], it[2])
         }
     }
 
     fun getDestinationForNextMap(inputNumber: Long, mapping: Mapping): Long? {
-        val destination = mapping.destination
-        val source = mapping.source
-        val range = mapping.range
-        val inputNumberInRange = inputNumber in source until(source + range)
+        val inputNumberInRange = inputNumber in mapping.sourceRange
         return if (inputNumberInRange) {
-            inputNumber - source + destination
+            mapping.destinationForSource(inputNumber)
         } else {
             null
         }
-
     }
 
     fun getNextInputNumber(inputNumber: Long, mappings: List<Mapping>): Long {
         var nextInputNumber: Long? = null
-        for (mapping in mappings){
+        for (mapping in mappings) {
             nextInputNumber = getDestinationForNextMap(inputNumber, mapping)
 
             if (nextInputNumber != null) {
@@ -46,7 +51,7 @@ fun main() {
     }
 
     fun part1(input: List<String>): Long {
-        val seeds = getSeeds(input[0])
+        val seeds = getSeeds(input)
         val steps = mutableListOf(
                 Step(1, "seed-to-soil map:"),
                 Step(2, "soil-to-fertilizer map:"),
@@ -57,13 +62,13 @@ fun main() {
                 Step(7, "humidity-to-location map:"),
         )
         val locations = mutableListOf<Long>()
-        for (seed in seeds){
+        for (seed in seeds) {
             var nextInputNumber = seed
-            for(i in 0 until steps.size){
+            for (i in 0 until steps.size) {
                 val mappingsForStep = parseMap(input, steps[i].name)
                 nextInputNumber = getNextInputNumber(nextInputNumber, mappingsForStep)
 
-                if(steps[i].name == steps.last().name){
+                if (steps[i].name == steps.last().name) {
                     locations.add(nextInputNumber)
                 }
             }
