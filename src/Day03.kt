@@ -83,9 +83,7 @@ fun main() {
     fun part2(input: List<String>): Int {
         val elementsList: List<Row> = input.mapIndexed { i: Int, s: String -> extractElements(s, i)}
         val gearNumbers = findGears(elementsList)
-        println(gearNumbers)
         val sum = gearNumbers.sumOf { it.number1.value * it.number2.value }
-        println(sum)
         return sum
     }
 
@@ -94,8 +92,8 @@ fun main() {
     check(part2(testInput) == 467835)
 
     val input = readInput("Day03")
-    part1(input).println()
-    part2(input).println()
+    part1(input).println() // 540131
+    part2(input).println() // 86879020
 }
 
 
