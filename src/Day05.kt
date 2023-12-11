@@ -1,5 +1,4 @@
 fun main() {
-    data class Step(val index: Long, val name: String)
     data class Mapping(val destination: Long, val source: Long, val length: Long) {
         val sourceRange
             get(): LongRange {
@@ -19,73 +18,60 @@ fun main() {
                 .map(String::toLong)
     }
 
-    fun parseMap(input: List<String>, mapName: String): List<Mapping> {
-        val mapLines = input.dropWhile { it != mapName }.drop(1).takeWhile { it.isNotBlank() }
-        return mapLines.map { line -> line.split(' ').map(String::toLong) }.map {
-            Mapping(it[0], it[1], it[2])
-        }
-    }
-
-    fun getDestinationForNextMap(inputNumber: Long, mapping: Mapping): Long? {
-        val inputNumberInRange = inputNumber in mapping.sourceRange
-        return if (inputNumberInRange) {
-            mapping.destinationForSource(inputNumber)
-        } else {
-            null
-        }
-    }
-
-    fun getNextInputNumber(inputNumber: Long, mappings: List<Mapping>): Long {
-        var nextInputNumber: Long? = null
-        for (mapping in mappings) {
-            nextInputNumber = getDestinationForNextMap(inputNumber, mapping)
-
-            if (nextInputNumber != null) {
-                break
-            }
-        }
-        if (nextInputNumber == null) {
-            nextInputNumber = inputNumber
-        }
-        return nextInputNumber
+    fun getMaps(input: List<String>): List<List<Mapping>> {
+        return input
+                .drop(2)
+                .joinToString("\n")
+                .split("\n\n")
+                .map { step ->
+                    step
+                            .split("\n")
+                            .drop(1)
+                            .map { line -> line.split(' ').map(String::toLong) }
+                            .map {
+                                Mapping(it[0], it[1], it[2])
+                            }
+                }
     }
 
     fun part1(input: List<String>): Long {
         val seeds = getSeeds(input)
-        val steps = mutableListOf(
-                Step(1, "seed-to-soil map:"),
-                Step(2, "soil-to-fertilizer map:"),
-                Step(3, "fertilizer-to-water map:"),
-                Step(4, "water-to-light map:"),
-                Step(5, "light-to-temperature map:"),
-                Step(6, "temperature-to-humidity map:"),
-                Step(7, "humidity-to-location map:"),
-        )
-        val locations = mutableListOf<Long>()
-        for (seed in seeds) {
-            var nextInputNumber = seed
-            for (i in 0 until steps.size) {
-                val mappingsForStep = parseMap(input, steps[i].name)
-                nextInputNumber = getNextInputNumber(nextInputNumber, mappingsForStep)
-
-                if (steps[i].name == steps.last().name) {
-                    locations.add(nextInputNumber)
-                }
+        val mappings = getMaps(input)
+        return mappings.fold(seeds) { acc, mapping ->
+            acc.map {inputNumber ->
+                mapping.find { inputNumber in it.sourceRange}?.destinationForSource(inputNumber) ?: inputNumber
             }
-        }
-
-        return locations.min()
+        }.min()
     }
 
-    fun part2(input: List<String>): Int {
-        return input.size
+    fun part2(input: List<String>): Long {
+        val seedsAndRanges = getSeeds(input)
+        val seedRanges = seedsAndRanges
+                .windowed(2, 2)
+                .map { it[0]..it[0] + it[1] }
+        val mappings = getMaps(input)
+
+        val reversedMaps = mappings.map {
+            it.map { old ->
+                Mapping(old.source, old.destination, old.length)
+            }
+        }.reversed()
+
+        return generateSequence(0, Long::inc).first { location ->
+            val seed = reversedMaps.fold(location) { acc, mapping ->
+                mapping.find { acc in it.sourceRange}?.destinationForSource(acc) ?: acc
+            }
+
+            seedRanges.any { seedRange -> seed in seedRange }
+        }
     }
 
     val testInput = readInput("Day05_test")
     check(part1(testInput) == 35L)
-    /*check(part2(testInput) == 0)*/
+    check(part2(testInput) == 46L)
 
     val input = readInput("Day05")
-    part1(input).println()
-    /*part2(input).println()*/
+    part1(input).println() // 214922730
+    part2(input).println() // 148041808
 }
+
