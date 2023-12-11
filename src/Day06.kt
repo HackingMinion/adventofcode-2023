@@ -1,49 +1,59 @@
 fun main() {
-    data class Race(val time: Int, val distance: Int) {
-        fun getIfWouldWinRace(holdButtonTime: Int): Boolean {
+    data class Race(val time: Long, val distance: Long) {
+        fun getIfWouldWinRace(holdButtonTime: Long): Boolean {
             return holdButtonTime * (time - holdButtonTime) > distance
         }
     }
 
     fun parseInput(input: List<String>): List<Race> {
-        val races = mutableListOf<Race>()
-        val timeRegex = Regex("\\s*(\\d+)")
-        val distanceRegex = Regex("\\s*(\\d+)")
+        val (times, records) = input.map { line ->
+            line
+                    .split(":")
+                    .last()
+                    .split(" ")
+                    .filter(String::isNotBlank)
+                    .map(String::toLong)
 
-        val timeMatches = timeRegex.findAll(input[0])
-        val distanceMatches = distanceRegex.findAll(input[1])
-
-        for ((timeMatch, distanceMatch) in timeMatches.zip(distanceMatches)) {
-            val time = timeMatch.groupValues[1].toInt()
-            val distance = distanceMatch.groupValues[1].toInt()
-            races.add(Race(time, distance))
         }
 
-        return races
+        return times.zip(records).map { (time, record) -> Race(time, record) }
     }
 
+    fun parseInputAsOneNumber(input: String): Long {
+        return input
+                .split(":")[1]
+                .trim()
+                .replace(" ", "")
+                .toLong()
+    }
 
-    fun part1(input: List<String>): Int {
+    fun countPossibleWins(race: Race): Long {
+        return (0..race.time).count {
+            race.getIfWouldWinRace(it)
+        }.toLong()
+    }
+
+    fun part1(input: List<String>): Long {
         val races = parseInput(input)
 
         return races.fold(1) { acc, race ->
-            val sum = (0..race.time).reduce { acc, i ->
-                acc + if (race.getIfWouldWinRace(i)) 1 else 0
-            }
-
-            acc * sum
+            acc * countPossibleWins(race)
         }
     }
 
-    fun part2(input: List<String>): Int {
-        return input.size
+    fun part2(input: List<String>): Long {
+        val time = parseInputAsOneNumber(input[0])
+        val distance = parseInputAsOneNumber(input[1])
+        val race = Race(time, distance)
+
+        return countPossibleWins(race)
     }
 
     val testInput = readInput("Day06_test")
-    check(part1(testInput) == 288)
-    /*check(part2(testInput) == 0)*/
+    check(part1(testInput) == 288L)
+    check(part2(testInput) == 71503L)
 
     val input = readInput("Day06")
     part1(input).println() // 252000
-    /*part2(input).println()*/
+    part2(input).println() // 36992486
 }
